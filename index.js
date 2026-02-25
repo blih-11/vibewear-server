@@ -20,8 +20,10 @@ const PORT = process.env.PORT || 4000;
 // ── CORS ──────────────────────────────────────────────────────────────────────
 // Allows any localhost port in dev + your deployed frontend URL in prod
 const allowedOrigins = [
-  /^http:\/\/localhost(:\d+)?$/,   // any localhost port (dev)
-  process.env.FRONTEND_URL,        // e.g. https://vibewear.netlify.app (set in Railway)
+  /^http:\/\/localhost(:\d+)?$/,          // any localhost port (dev)
+  'https://vibewearr.netlify.app',        // store
+  'https://vibewear-admin.onrender.com',  // admin panel
+  process.env.FRONTEND_URL,              // optional override via env var
 ].filter(Boolean);
 app.use(cors({ origin: allowedOrigins }));
 
