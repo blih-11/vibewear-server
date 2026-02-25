@@ -11,6 +11,8 @@ import { fileURLToPath } from 'url';
 import adminAuthRoutes from './routes/auth.js';
 import productRoutes   from './routes/products.js';
 import analyticsRoutes from './routes/analytics.js';
+import cartRoutes    from './routes/cart.js';
+import orderRoutes   from './routes/orders.js';
 import { requireAdmin } from './middleware/adminAuth.js';
 
 const app = express();
@@ -43,6 +45,9 @@ app.use('/api/products', (req, res, next) => {
 }, productRoutes);
 
 app.use('/api/analytics', requireAdmin, analyticsRoutes);
+
+app.use('/api/cart',   cartRoutes);
+app.use('/api/orders', orderRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date() }));
 

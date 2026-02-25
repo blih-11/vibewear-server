@@ -1,27 +1,30 @@
 import express from 'express';
 import multer from 'multer';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import Product from '../models/Product.js';
 
 const router = express.Router();
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// ── Image upload setup ───────────────────────────────────────────────────────
-const uploadDir = path.join(__dirname, '../../public/images/products');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+// ── Cloudinary config ────────────────────────────────────────────────────────
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const unique = Date.now() + '-' + Math.round(Math.random() * 1e6);
-    cb(null, unique + path.extname(file.originalname));
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder:          'vibewear/products',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+    transformation:  [{ width: 1200, crop: 'limit', quality: 'auto' }],
   },
 });
+
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) cb(null, true);
     else cb(new Error('Only image files allowed'));
@@ -59,7 +62,7 @@ router.get('/:id', async (req, res) => {
 router.post('/', upload.array('images', 10), async (req, res) => {
   try {
     const body = req.body;
-    const uploadedImages = req.files?.map(f => `/images/products/${f.filename}`) || [];
+    const uploadedImages = req.files?.map(f => f.path) || [];
 
     const product = new Product({
       name:          body.name,
@@ -90,7 +93,7 @@ router.post('/', upload.array('images', 10), async (req, res) => {
 router.put('/:id', upload.array('images', 10), async (req, res) => {
   try {
     const body = req.body;
-    const uploadedImages = req.files?.map(f => `/images/products/${f.filename}`) || [];
+    const uploadedImages = req.files?.map(f => f.path) || [];
 
     const updates = {
       name:          body.name,
@@ -109,11 +112,11 @@ router.put('/:id', upload.array('images', 10), async (req, res) => {
     };
 
     if (uploadedImages.length > 0) {
-      updates.image = uploadedImages[0];
+      updates.image  = uploadedImages[0];
       updates.images = uploadedImages;
     } else if (body.image) {
-      updates.image = body.image;
-      updates.images = JSON.parse(body.images || `["${body.image}"]`);
+      updates.image  = body.image;
+      updates.images = JSON.parse(body.images || '["' + body.image + '"]');
     }
 
     const product = await Product.findByIdAndUpdate(req.params.id, updates, { new: true });
