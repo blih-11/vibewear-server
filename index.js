@@ -11,29 +11,28 @@ import { fileURLToPath } from 'url';
 import adminAuthRoutes from './routes/auth.js';
 import productRoutes   from './routes/products.js';
 import analyticsRoutes from './routes/analytics.js';
-import cartRoutes    from './routes/cart.js';
-import orderRoutes   from './routes/orders.js';
+import cartRoutes      from './routes/cart.js';
+import orderRoutes     from './routes/orders.js';
 import { requireAdmin } from './middleware/adminAuth.js';
+import Activity from './models/Activity.js';
 
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 4000;
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
-// Allows any localhost port in dev + your deployed frontend URL in prod
 const allowedOrigins = [
-  /^http:\/\/localhost(:\d+)?$/,          // any localhost port (dev)
-  'https://vibewearr.netlify.app',        // store
-  'https://vibewear-admin.onrender.com',  // admin panel
-  process.env.FRONTEND_URL,              // optional override via env var
+  /^http:\/\/localhost(:\d+)?$/,
+  'https://vibewearr.netlify.app',
+  'https://vibewears.netlify.app',
+  'https://vibewear-admin.onrender.com',
+  process.env.FRONTEND_URL,
 ].filter(Boolean);
 app.use(cors({ origin: allowedOrigins }));
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Serve product images statically (public — no auth needed)
 app.use('/images', express.static(path.join(__dirname, '../public/images')));
 
 // ── Routes ────────────────────────────────────────────────────────────────────
@@ -44,6 +43,24 @@ app.use('/api/products', (req, res, next) => {
   requireAdmin(req, res, next);
 }, productRoutes);
 
+// PUBLIC — store calls this for every visitor (no auth needed)
+app.post('/api/analytics/track', async (req, res) => {
+  try {
+    const { uid, email, name } = req.body;
+    if (!uid) return res.status(400).json({ success: false, message: 'uid required' });
+    const today = new Date().toISOString().slice(0, 10);
+    await Activity.findOneAndUpdate(
+      { uid, date: today },
+      { uid, email: email || '', name: name || (uid.startsWith('guest_') ? 'Guest' : ''), date: today },
+      { upsert: true, new: true }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// PROTECTED — admin dashboard only
 app.use('/api/analytics', requireAdmin, analyticsRoutes);
 
 app.use('/api/cart',   cartRoutes);
@@ -51,7 +68,7 @@ app.use('/api/orders', orderRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date() }));
 
-// ── MongoDB Connection ────────────────────────────────────────────────────────
+// ── MongoDB ───────────────────────────────────────────────────────────────────
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB connected');
