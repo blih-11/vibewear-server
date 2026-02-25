@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: vibewear-server
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false        # You'll paste this in the Render dashboard
+      - key: PORT
+        value: 4000
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        sync: false        # Add your Netlify URL here after deploying frontend
