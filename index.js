@@ -26,6 +26,10 @@ const allowedOrigins = [
   'https://vibewearr.netlify.app',
   'https://vibewears.netlify.app',
   'https://vibewear-admin.onrender.com',
+  'http://vibewear.online',
+  'https://vibewear.online',
+  'http://www.vibewear.online',
+  'https://www.vibewear.online',
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 app.use(cors({ origin: allowedOrigins }));
