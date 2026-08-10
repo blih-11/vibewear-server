@@ -13,6 +13,7 @@ import productRoutes   from './routes/products.js';
 import analyticsRoutes from './routes/analytics.js';
 import cartRoutes      from './routes/cart.js';
 import orderRoutes     from './routes/orders.js';
+import instagramRoutes from './routes/instagram.js';
 import { requireAdmin } from './middleware/adminAuth.js';
 import Activity from './models/Activity.js';
 
@@ -26,6 +27,10 @@ const allowedOrigins = [
   'https://vibewearr.netlify.app',
   'https://vibewears.netlify.app',
   'https://vibewear-admin.onrender.com',
+  'http://vibewear.online',
+  'https://vibewear.online',
+  'http://www.vibewear.online',
+  'https://www.vibewear.online',
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 app.use(cors({ origin: allowedOrigins }));
@@ -65,6 +70,11 @@ app.use('/api/analytics', requireAdmin, analyticsRoutes);
 
 app.use('/api/cart',   cartRoutes);
 app.use('/api/orders', orderRoutes);
+
+app.use('/api/instagram', (req, res, next) => {
+  if (req.method === 'GET') return next();
+  requireAdmin(req, res, next);
+}, instagramRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date() }));
 

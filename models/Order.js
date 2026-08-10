@@ -11,6 +11,8 @@ const orderItemSchema = new mongoose.Schema({
 }, { _id: false });
 
 const orderSchema = new mongoose.Schema({
+  orderNumber:   { type: String, required: true, unique: true, index: true },
+  channel:       { type: String, enum: ['whatsapp', 'instagram', 'card'], default: 'whatsapp' },
   uid:           { type: String, required: true, index: true },
   email:         { type: String },
   items:         { type: [orderItemSchema], default: [] },
