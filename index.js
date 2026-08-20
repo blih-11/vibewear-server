@@ -14,6 +14,7 @@ import analyticsRoutes from './routes/analytics.js';
 import cartRoutes      from './routes/cart.js';
 import orderRoutes     from './routes/orders.js';
 import instagramRoutes from './routes/instagram.js';
+import categoryRoutes, { seedDefaultCategories } from './routes/categories.js';
 import { requireAdmin } from './middleware/adminAuth.js';
 import Activity from './models/Activity.js';
 
@@ -48,6 +49,11 @@ app.use('/api/products', (req, res, next) => {
   requireAdmin(req, res, next);
 }, productRoutes);
 
+app.use('/api/categories', (req, res, next) => {
+  if (req.method === 'GET') return next();
+  requireAdmin(req, res, next);
+}, categoryRoutes);
+
 // PUBLIC — store calls this for every visitor (no auth needed)
 app.post('/api/analytics/track', async (req, res) => {
   try {
@@ -80,8 +86,9 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date() }
 
 // ── MongoDB ───────────────────────────────────────────────────────────────────
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
+  .then(async () => {
     console.log('✅ MongoDB connected');
+    await seedDefaultCategories().catch(err => console.error('⚠️ Category seed failed:', err.message));
     app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
   })
   .catch(err => {
