@@ -13,6 +13,13 @@ cloudinary.v2.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+  console.error(
+    '⚠️  Cloudinary env vars missing (CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET). ' +
+    'Product image uploads will fail until these are set.'
+  );
+}
+
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary.v2,
   params: {
@@ -40,7 +47,7 @@ router.get('/', async (req, res) => {
     if (search) filter.name = { $regex: search, $options: 'i' };
     if (inStock !== undefined) filter.inStock = inStock === 'true';
 
-    const products = await Product.find(filter).sort({ createdAt: -1 });
+    const products = await Product.find(filter).sort({ _id: -1 });
     res.json({ success: true, products });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

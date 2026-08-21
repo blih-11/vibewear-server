@@ -84,6 +84,25 @@ app.use('/api/instagram', (req, res, next) => {
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date() }));
 
+// ── 404 for unmatched API routes — JSON instead of Express's default HTML page ──
+app.use('/api', (req, res) => {
+  res.status(404).json({ success: false, message: 'Route not found' });
+});
+
+// ── Global error handler — must be registered last, with all 4 params.
+// Anything that throws before a route's own try/catch runs (most notably
+// Multer/Cloudinary upload errors — bad file type, oversized file, missing/
+// invalid Cloudinary credentials) otherwise escapes as Express's default HTML
+// error page, which is exactly what breaks the frontend's res.json() parse
+// with "Unexpected token '<'". This guarantees every response is JSON. ──
+app.use((err, req, res, next) => {
+  console.error('❌ Unhandled error:', err);
+  if (err.name === 'MulterError') {
+    return res.status(400).json({ success: false, message: `Upload error: ${err.message}` });
+  }
+  res.status(err.status || 500).json({ success: false, message: err.message || 'Internal server error' });
+});
+
 // ── MongoDB ───────────────────────────────────────────────────────────────────
 mongoose.connect(process.env.MONGO_URI)
   .then(async () => {
