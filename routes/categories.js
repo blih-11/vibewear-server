@@ -67,12 +67,11 @@ export async function seedDefaultCategories() {
     { name: 'Tees',              slug: 'tees',               type: 'category' },
     { name: 'Shirts',            slug: 'shirts',              type: 'category' },
     { name: 'Hoodies',           slug: 'hoodies',             type: 'category' },
-    { name: 'Bottoms',           slug: 'bottoms',             type: 'category' },
-    { name: 'Accessories',       slug: 'accessories',         type: 'category' },
-    { name: 'Full Fits',         slug: 'fullfit',             type: 'category' },
-    { name: 'Featured Editorial',slug: 'featured-editorial',  type: 'section' },
+    { name: 'Bottoms',           slug: 'bottoms',              type: 'category' },
+    { name: 'Accessories',       slug: 'accessories',          type: 'category' },
+    { name: 'Full Fits',         slug: 'fullfit',              type: 'category' },
     { name: 'New Arrivals',      slug: 'new-arrivals',        type: 'section' },
-    { name: 'Latest',            slug: 'latest',              type: 'section' },
+    { name: 'Sales',             slug: 'sales',                type: 'section' },
     { name: 'Top Products',      slug: 'top-products',        type: 'section' },
   ];
 
@@ -82,6 +81,15 @@ export async function seedDefaultCategories() {
     if (!exists) { await Category.create(def); seeded++; }
   }
   if (seeded > 0) console.log(`🌱 Seeded ${seeded} new default categories/sections`);
+
+  // Retired sections — "Latest" and "Featured Editorial" no longer exist on the
+  // homepage (Latest was replaced by "Sales"; Featured Editorial was removed
+  // outright along with its video banner). Clean these up so they don't linger
+  // as dead options in the admin's Sections picker. Any product previously
+  // tagged with these keeps the tag (harmless, just unused) — only the
+  // selectable Category entries themselves are removed.
+  const retired = await Category.deleteMany({ slug: { $in: ['latest', 'featured-editorial'] } });
+  if (retired.deletedCount > 0) console.log(`🧹 Removed ${retired.deletedCount} retired section(s)`);
 }
 
 export default router;
