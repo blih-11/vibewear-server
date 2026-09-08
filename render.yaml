@@ -20,3 +20,9 @@ services:
         sync: false
       - key: FRONTEND_URL
         sync: false        # Add your Netlify URL here after deploying frontend
+      - key: GMAIL_USER
+        sync: false        # Gmail address used to send appointment request emails
+      - key: GMAIL_APP_PASSWORD
+        sync: false        # 16-char Gmail App Password (requires 2-Step Verification on the account)
+      - key: COMPANY_EMAIL
+        sync: false        # Optional — inbox that receives requests. Defaults to GMAIL_USER if unset

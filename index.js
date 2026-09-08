@@ -1,7 +1,4 @@
-import dotenv from 'dotenv';
-import { dirname as _dirname, join as _join } from 'path';
-import { fileURLToPath as _ftu } from 'url';
-dotenv.config({ path: _join(_dirname(_ftu(import.meta.url)), '.env') });
+import './env.js'; // MUST stay the very first import — see env.js for why
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
@@ -15,6 +12,7 @@ import cartRoutes      from './routes/cart.js';
 import orderRoutes     from './routes/orders.js';
 import instagramRoutes from './routes/instagram.js';
 import categoryRoutes, { seedDefaultCategories } from './routes/categories.js';
+import appointmentRoutes from './routes/appointments.js';
 import { requireAdmin } from './middleware/adminAuth.js';
 import Activity from './models/Activity.js';
 
@@ -76,6 +74,9 @@ app.use('/api/analytics', requireAdmin, analyticsRoutes);
 
 app.use('/api/cart',   cartRoutes);
 app.use('/api/orders', orderRoutes);
+
+// PUBLIC — "Book An Appointment" form on the homepage
+app.use('/api/appointments', appointmentRoutes);
 
 app.use('/api/instagram', (req, res, next) => {
   if (req.method === 'GET') return next();
