@@ -13,6 +13,7 @@ import orderRoutes     from './routes/orders.js';
 import instagramRoutes from './routes/instagram.js';
 import categoryRoutes, { seedDefaultCategories } from './routes/categories.js';
 import appointmentRoutes from './routes/appointments.js';
+import paymentRoutes from './routes/payments.js';
 import { requireAdmin } from './middleware/adminAuth.js';
 import Activity from './models/Activity.js';
 
@@ -77,6 +78,9 @@ app.use('/api/orders', orderRoutes);
 
 // PUBLIC — "Book An Appointment" form on the homepage
 app.use('/api/appointments', appointmentRoutes);
+
+// PUBLIC — Paystack payment verification, called right after checkout
+app.use('/api/payments', paymentRoutes);
 
 app.use('/api/instagram', (req, res, next) => {
   if (req.method === 'GET') return next();

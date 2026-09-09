@@ -5,6 +5,7 @@ const productSchema = new mongoose.Schema({
   category:      { type: [String], required: true },
   price:         { type: Number, required: true },
   originalPrice: { type: Number, default: null },
+  weight:        { type: Number, default: 0.3 }, // kg per unit — used to calculate weight-based shipping at checkout
   image:         { type: String, required: true },
   images:        { type: [String], default: [] },
   isNew:         { type: Boolean, default: false },

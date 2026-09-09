@@ -26,3 +26,5 @@ services:
         sync: false        # 16-char Gmail App Password (requires 2-Step Verification on the account)
       - key: COMPANY_EMAIL
         sync: false        # Optional — inbox that receives requests. Defaults to GMAIL_USER if unset
+      - key: PAYSTACK_SECRET_KEY
+        sync: false        # Your Paystack SECRET key (starts with sk_test_ or sk_live_) — used server-side only
