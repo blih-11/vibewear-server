@@ -26,6 +26,7 @@ const allowedOrigins = [
   /^http:\/\/localhost(:\d+)?$/,
   'https://vibewearr.netlify.app',
   'https://vibewears.netlify.app',
+  'https://vibetestserver.netlify.app',
   'https://vibewear-admin.onrender.com',
   'http://vibewear.online',
   'https://vibewear.online',
