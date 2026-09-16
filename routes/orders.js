@@ -1,6 +1,8 @@
 import express from 'express';
 import Order from '../models/Order.js';
+import Product from '../models/Product.js';
 import { requireAdmin } from '../middleware/adminAuth.js';
+import { requireOwnUid } from '../middleware/verifyFirebaseToken.js';
 
 const router = express.Router();
 
@@ -14,15 +16,77 @@ function generateOrderNumber() {
   return `VW-${code}`;
 }
 
+// Shipping matches the calculation in Checkout.jsx exactly — kept in sync
+// manually since there's no shared package between frontend/backend. If you
+// ever change the rate/threshold on the frontend, update it here too.
+const SHIPPING_RATE_PER_KG = 5;
+const FREE_SHIPPING_THRESHOLD = 200;
+const DEFAULT_ITEM_WEIGHT_KG = 0.3;
+
+// Re-derives subtotal/shipping/total (and each item's price) from the real
+// Product records rather than trusting whatever the browser sent. Without
+// this, editing the request body in dev tools before checkout would let
+// someone pay a fraction of the real cart value — the Paystack verify step
+// only checks the paid amount against this order's stored total, so if the
+// total itself were forged, a forged payment would "match" it perfectly.
+async function priceOrderItems(rawItems) {
+  if (!Array.isArray(rawItems) || rawItems.length === 0) {
+    throw new Error('Your cart is empty.');
+  }
+
+  const productIds = rawItems.map(i => i.productId).filter(Boolean);
+  const products = await Product.find({ _id: { $in: productIds } });
+  const productMap = new Map(products.map(p => [String(p._id), p]));
+
+  let subtotal = 0;
+  let totalWeightKg = 0;
+
+  const items = rawItems.map(raw => {
+    const product = productMap.get(String(raw.productId));
+    if (!product) throw new Error(`One of the items in your cart is no longer available.`);
+
+    const quantity = Math.max(1, Math.floor(Number(raw.quantity) || 0));
+    if (!quantity) throw new Error(`Invalid quantity for "${product.name}".`);
+
+    const price = product.price; // authoritative — never trust the client's price
+    const weight = Number(product.weight) > 0 ? Number(product.weight) : DEFAULT_ITEM_WEIGHT_KG;
+
+    subtotal += price * quantity;
+    totalWeightKg += weight * quantity;
+
+    return {
+      productId: String(product._id),
+      name: product.name,
+      image: product.image,
+      price,
+      size: raw.size || '',
+      color: raw.color || '',
+      quantity,
+    };
+  });
+
+  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD
+    ? 0
+    : Math.round(totalWeightKg * SHIPPING_RATE_PER_KG * 100) / 100;
+
+  return { items, subtotal, shipping, total: subtotal + shipping };
+}
+
 // ── POST /api/orders — create a new order (public) ─────────────────────────────
 router.post('/', async (req, res) => {
   try {
+    const { items, subtotal, shipping, total } = await priceOrderItems(req.body.items);
+
     let orderNumber = generateOrderNumber();
     let order;
     // retry a couple times on the rare chance of a collision
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        order = await new Order({ ...req.body, orderNumber }).save();
+        order = await new Order({
+          ...req.body,
+          items, subtotal, shipping, total, // server-computed values win, always
+          orderNumber,
+        }).save();
         break;
       } catch (err) {
         if (err.code === 11000 && attempt < 2) { orderNumber = generateOrderNumber(); continue; }
@@ -73,8 +137,11 @@ router.put('/:id', requireAdmin, async (req, res) => {
   }
 });
 
-// ── GET /api/orders/:uid — get all orders for a user (public — customer's own) ─
-router.get('/:uid', async (req, res) => {
+// ── GET /api/orders/:uid — get all orders for a user ───────────────────────────
+// Requires a valid Firebase ID token that actually belongs to :uid — otherwise
+// anyone who knew (or guessed) a customer's uid could pull their full order
+// history, including name/phone/address.
+router.get('/:uid', requireOwnUid, async (req, res) => {
   try {
     const orders = await Order.find({ uid: req.params.uid }).sort({ createdAt: -1 });
     res.json({ success: true, orders });

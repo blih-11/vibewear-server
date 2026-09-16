@@ -12,7 +12,7 @@ const orderItemSchema = new mongoose.Schema({
 
 const orderSchema = new mongoose.Schema({
   orderNumber:   { type: String, required: true, unique: true, index: true },
-  channel:       { type: String, enum: ['whatsapp', 'instagram', 'card'], default: 'whatsapp' },
+  channel:       { type: String, enum: ['whatsapp', 'instagram', 'card', 'mobile_money'], default: 'whatsapp' },
   uid:           { type: String, required: true, index: true },
   email:         { type: String },
   items:         { type: [orderItemSchema], default: [] },
