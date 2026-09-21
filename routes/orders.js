@@ -3,6 +3,7 @@ import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import { requireAdmin } from '../middleware/adminAuth.js';
 import { requireOwnUid } from '../middleware/verifyFirebaseToken.js';
+import { getUsdToGhsRate } from '../utils/exchangeRate.js';
 
 const router = express.Router();
 
@@ -76,6 +77,8 @@ async function priceOrderItems(rawItems) {
 router.post('/', async (req, res) => {
   try {
     const { items, subtotal, shipping, total } = await priceOrderItems(req.body.items);
+    const fxRateGHS = await getUsdToGhsRate();
+    const totalGHS = Math.round(total * fxRateGHS * 100) / 100;
 
     let orderNumber = generateOrderNumber();
     let order;
@@ -84,7 +87,7 @@ router.post('/', async (req, res) => {
       try {
         order = await new Order({
           ...req.body,
-          items, subtotal, shipping, total, // server-computed values win, always
+          items, subtotal, shipping, total, totalGHS, fxRateGHS, // server-computed values win, always
           orderNumber,
         }).save();
         break;

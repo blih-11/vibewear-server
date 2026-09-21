@@ -42,7 +42,12 @@ router.post('/verify', async (req, res) => {
     }
 
     const tx = psData.data;
-    const expectedAmount = Math.round(order.total * 100); // GHS → pesewas (Paystack's smallest unit)
+    // order.totalGHS is the server-computed GHS charge amount (order.total is in
+    // USD, the store's base currency — see routes/orders.js). Older orders from
+    // before this field existed fall back to treating `total` as already-GHS,
+    // which was the previous (buggy) behavior, so this stays backward compatible.
+    const expectedGHS = order.totalGHS ?? order.total;
+    const expectedAmount = Math.round(expectedGHS * 100); // GHS → pesewas (Paystack's smallest unit)
 
     if (tx.status !== 'success') {
       return res.status(400).json({ success: false, message: `Payment was not successful (status: ${tx.status}).` });

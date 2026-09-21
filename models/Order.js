@@ -18,7 +18,9 @@ const orderSchema = new mongoose.Schema({
   items:         { type: [orderItemSchema], default: [] },
   subtotal:      { type: Number, required: true },
   shipping:      { type: Number, default: 0 },
-  total:         { type: Number, required: true },
+  total:         { type: Number, required: true }, // USD — the store's base currency
+  totalGHS:      { type: Number },                 // server-computed GHS equivalent actually charged via Paystack
+  fxRateGHS:     { type: Number },                  // USD→GHS rate used, kept for auditing
   customer: {
     firstName:   String,
     lastName:    String,
