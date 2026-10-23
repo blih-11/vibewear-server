@@ -14,6 +14,7 @@ import instagramRoutes from './routes/instagram.js';
 import categoryRoutes, { seedDefaultCategories } from './routes/categories.js';
 import appointmentRoutes from './routes/appointments.js';
 import paymentRoutes from './routes/payments.js';
+import fitRoutes from './routes/fits.js';
 import { requireAdmin } from './middleware/adminAuth.js';
 import Activity from './models/Activity.js';
 
@@ -53,6 +54,12 @@ app.use('/api/categories', (req, res, next) => {
   if (req.method === 'GET') return next();
   requireAdmin(req, res, next);
 }, categoryRoutes);
+
+// Curated "Fits" (bundles of existing products) — public read, admin-only writes
+app.use('/api/fits', (req, res, next) => {
+  if (req.method === 'GET') return next();
+  requireAdmin(req, res, next);
+}, fitRoutes);
 
 // PUBLIC — store calls this for every visitor (no auth needed)
 app.post('/api/analytics/track', async (req, res) => {
